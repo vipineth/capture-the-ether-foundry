@@ -21,6 +21,14 @@ contract PredictTheFutureTest is Test {
         vm.roll(104293);
         vm.warp(93582192);
 
+        exploitContract.callMeFirst{value: 1 ether}(); // set the guess
+
+        while (!predictTheFuture.isComplete()) {
+            vm.roll(block.number + 1);
+            vm.warp(block.timestamp + 15);
+            exploitContract.exploit();
+        }
+
         // Put your solution here
 
         _checkSolved();
